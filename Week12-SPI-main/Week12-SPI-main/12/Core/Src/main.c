@@ -58,10 +58,30 @@ char KxDataBuffer[32] =
 { 0 };
 char RxDataBuffer[32] =
 { 0 };
+enum _StateDisplay
+{
+  StateDisplay_Start = 0,
+  StateDisplay_MenuRoot_Print = 10,
+  StateDisplay_MenuRoot_WaitInput,
+  StateDisplay_Menu1_Print = 20,
+  StateDisplay_Menu1_WaitInput,
+  StateDisplay_Menu2_Print = 30,
+  StateDisplay_Menu2_WaitInput,
+  StateDisplay_Menu3_Print = 40,
+  StateDisplay_Menu3_WaitInput
+};
+uint16_t STATE_Display=0;
 uint16_t ADCin = 0;
 uint64_t _micro = 0;
-uint16_t dataOut = 0;
-	uint8_t DACConfig = 0b0011;
+float dataOut = 0;
+uint8_t DACConfig = 0b0011;
+float Vmax=3.3;
+float Vmin=0;
+float f=0;
+uint64_t x=0;
+float t=0;
+float duty=0;
+uint64_t tt=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -138,19 +158,302 @@ int main(void)
 					sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);
 					HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
 				}
+				 switch (STATE_Display)
+					    {
+					    case StateDisplay_Start:
+					      STATE_Display = StateDisplay_MenuRoot_Print;
+					      break;
+					    case StateDisplay_MenuRoot_Print:
+					    	{
+					      char temp[]=" Menu\r\n 1.Sawtooth Control\r\n 2.Sine Wave Control\r\n 3.Square Wave Control\r\n";
+					      HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+					    	}
+					          STATE_Display = StateDisplay_MenuRoot_WaitInput;
+					          break;
+
+					        case StateDisplay_MenuRoot_WaitInput:
+					          switch (inputchar)
+					          {
+					          case -1:
+					            break;
+					          case '1':
+					            STATE_Display = StateDisplay_Menu1_Print;
+					            break;
+					          case '2':
+					          	STATE_Display = StateDisplay_Menu2_Print;
+					          	break;
+					          case '3':
+					          	STATE_Display = StateDisplay_Menu3_Print;
+					          	break;
+					          default:
+					          {
+					         	char temp[]="You pressed the wrong button, please try again.\r\n";
+					         	HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),100);
+					          }
+					            STATE_Display = StateDisplay_MenuRoot_Print;
+					            break;
+					          }
+					          break;
+					   case StateDisplay_Menu1_Print:
+					       switch (inputchar)
+					       {
+					           case -1:
+					           {
+					            char temp[]="Menu Sawtooth Control\r\n a.Freq+0.1Hz\r\n s.Freq-0.1Hz \r\n d.Vmax+0.1V \r\n f.Vmax-0.1V \r\n g.Vmin+0.1V \r\n h.Vmin-0.1V \r\n j.Slope Up \r\n k.Slope Down \r\n x.Back \r\n";
+					          	HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+					           }
+					          	STATE_Display = StateDisplay_Menu1_WaitInput;
+					          	break;
+//					          	default:
+//					          	{
+//					          	char temp[]="You pressed the wrong button, please try again.\r\n";
+//					          	HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+//					          	}
+//					          	STATE_Display = StateDisplay_Menu1_Print;
+//					          	break;
+					       }
+					        break;
+					   case StateDisplay_Menu1_WaitInput:
+					      	switch (inputchar)
+					      	{
+					      	    case -1:
+					      	    break;
+					      	    case 'x':
+
+					      	     STATE_Display = StateDisplay_MenuRoot_Print;
+					      	    break;
+					      	    case 'a':
+					      	    	f+=0.1;
+					      	    	sprintf(KxDataBuffer, "Freq=%dHz \r\n", f);
+					      	    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					      	     break;
+					      	    case 's':
+					      	       f-=0.1;
+					      	       sprintf(KxDataBuffer, "Freq=%dHz \r\n", f);
+					      	       HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					      	    break;
+					      	    case 'd':
+					      	       Vmax+=0.1;
+					      	       sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
+					      	       HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					      	    break;
+					      	    case'f':
+					      	    	Vmax-=0.1;
+					      	    	sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
+					      	    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					      	    break;
+					      	    case'g':
+					      	  		Vmin+=0.1;
+					      	  		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
+					      	  		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					      	  	break;
+					      	    case'h':
+					      	 		Vmin-=0.1;
+					      	 		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
+					      	 		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					      	 	break;
+					      	    case'j':
+					      	    	     x=1;
+					      	              {
+					      	  			  char temp[]="Slope Up\r\n ";
+					      	  			  HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+					      	  			  }
+					      	 	break;
+					      	    case'k':
+					      	  			 x=2;
+					      	  			  {
+					      	  			  char temp[]="Slope Down\r\n ";
+					      	  			  HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+					      	  			  }
+					      	  	break;
+					      	    default:
+					      	    {
+					      	     char temp[]="You pressed the wrong button, please try again.\r\n";
+					      	     HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+					      	    }
+					      	    STATE_Display = StateDisplay_Menu1_Print;
+					      	    break;
+					       }
+					       break;
+//					  case StateDisplay_Menu2_Print:
+//					      switch (inputchar)
+//					      {
+//					         case -1:
+//					      	 {
+//					      		char temp[]="Menu Sine Wave Control\r\n a.Freq+0.1Hz\r\n s.Freq-0.1Hz \r\n d.Vmax+0.1V \r\n f.Vmax-0.1V \r\n g.Vmin+0.1V \r\n h.Vmin-0.1V \r\n x.Back \r\n";
+//					      	 HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+//					         }
+//					      	STATE_Display = StateDisplay_Menu2_WaitInput;
+//					      	break;
+//					      default:
+//					         {
+//					         char temp[]="You pressed the wrong button, please try again.\r\n";
+//					         HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+//					         }
+//					      STATE_Display = StateDisplay_MenuRoot_Print;
+//					      break;
+//					      }
+//					      break;
+//					 case StateDisplay_Menu2_WaitInput:
+//					    switch (inputchar)
+//					    {
+//					    case -1:
+//					    break;
+//					    case 'x':
+//					     STATE_Display = StateDisplay_MenuRoot_Print;
+//					    break;
+//					    case 'a':
+//
+//					        sprintf(KxDataBuffer, "Freq=%dHz \r\n", f);
+//					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+//					    break;
+//					    case 's':
+//
+//					    	sprintf(KxDataBuffer, "Freq=%dHz \r\n", f);
+//					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+//					    break;
+//					    case 'd':
+//
+//					    	sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
+//					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+//					    break;
+//					    case'f':
+//
+//					    	sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
+//					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+//					    break;
+//					    case'g':
+//
+//					    	sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
+//					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+//					    break;
+//					    case'h':
+//
+//					        sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
+//					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+//					    break;
+//					    default:
+//					      	{
+//					           char temp[]="You pressed the wrong button, please try again.\r\n";
+//					      	   HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+//					      	}
+//					    STATE_Display = StateDisplay_Menu2_Print;
+//					    break;
+//					    }
+//					    break;
+					 case StateDisplay_Menu3_Print: //display one time state
+					     switch (inputchar)
+					     {
+					    	case -1:
+					    	{
+					    		char temp[]="Menu Sine Wave Control\r\n a.Freq+0.1Hz\r\n s.Freq-0.1Hz \r\n d.Vmax+0.1V \r\n f.Vmax-0.1V \r\n g.Vmin+0.1V \r\n h.Vmin-0.1V \r\n j.Duty Cycle+10% \r\n k.Duty Cycle-10% \r\n x.Back \r\n";
+					    	 HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+					    	}
+					    	 STATE_Display = StateDisplay_Menu3_WaitInput;
+					    	 break;
+					    	default:
+					    	{
+					    	 char temp[]="You pressed the wrong button, please try again.\r\n";
+					    	 HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+					    	}
+					    	 STATE_Display = StateDisplay_MenuRoot_Print;
+					    	 break;
+					    }
+					    break;
+					 case StateDisplay_Menu3_WaitInput:
+					     switch (inputchar)
+					     {
+					        case -1:
+					        	t=1/f;
+					        	int x=micros();
+					            tt=x%((uint64_t)t*1000000);
+					            if(tt>=t*duty*1000000)
+					            {
+					            	dataOut=Vmin;
+					            }
+					            else
+					            {
+					            	dataOut=Vmax;
+					            }
+					    	break;
+					        case 'x':
+
+					       	STATE_Display = StateDisplay_MenuRoot_Print;
+					       	break;
+					       	case 'a':
+					       		f+=0.1;
+					       		sprintf(KxDataBuffer, "Freq=%dHz \r\n", f);
+					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					       	break;
+					       	case 's':
+					       		f-=0.1;
+					       		sprintf(KxDataBuffer, "Freq=%dHz \r\n", f);
+					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					       	break;
+					       	case 'd':
+					       		Vmax+=0.1;
+					       		sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
+					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					       	break;
+					       	case'f':
+					       		Vmax-=0.1;
+					       		sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
+					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					        break;
+					       	case'g':
+					       		Vmin+=0.1;
+					       		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
+					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					        break;
+					       	case'h':
+					       		Vmin-=0.1;
+					       		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
+					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
+					       	break;
+					       	case'j':
+                                duty+=0.1;
+					       	break;
+					       	case'k':
+                                duty-=0.1;
+					       	break;
+					    	default:
+					    	{
+					    	char temp[]="You pressed the wrong button, please try again.\r\n";
+					    	HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),1000);
+					    	}
+					    	STATE_Display = StateDisplay_Menu3_Print;
+					    	break;
+					    }
+					    break;
+			     }
 		static uint64_t timestamp = 0;
 		if (micros() - timestamp > 100)
 		{
 			timestamp = micros();
-			dataOut++;
-			dataOut %= 4096;
+			if(x==1)
+			{
+				dataOut=dataOut+(float)((Vmax-Vmin)*f*0.0001)*(4095/3.3);
+				if(dataOut>=Vmax*(4095/3.3))
+				{
+				dataOut=Vmin*(4095/3.3);
+				}
+			}
+			if(x==2)
+			{
+				dataOut=dataOut-(float)((Vmax-Vmin)*f*0.0001)*(4095/3.3);
+				if(dataOut<=Vmin*(4095/3.3))
+				{
+				dataOut=Vmax*(4095/3.3);
+				}
+			}
 			if (hspi3.State == HAL_SPI_STATE_READY
 					&& HAL_GPIO_ReadPin(SPI_SS_GPIO_Port, SPI_SS_Pin)
 							== GPIO_PIN_SET)
 			{
-				MCP4922SetOutput(DACConfig, dataOut);
+				MCP4922SetOutput(DACConfig, (uint16_t)dataOut);
 			}
 		}
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -469,9 +772,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SHDN_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
+void UARTRecieveAndResponsePolling()
+{
+	char Recieve[32]={0};
+
+	HAL_UART_Receive(&huart2, (uint8_t*)Recieve, 32, 1000);
+
+	sprintf(TxDataBuffer, "Received:[%s]\r\n", Recieve);
+	HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+
+}
+
+
 int16_t UARTRecieveIT()
 {
 	static uint32_t dataPos =0;
