@@ -242,16 +242,28 @@ int main(void)
 					      	    break;
 					      	    case'f':
 					      	    	Vmax-=0.1;
+					      	    	if(Vmax<Vmin)
+					      	    	{
+					      	    	Vmax=Vmin;
+					      	    	}
 					      	    	sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
 					      	    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					      	    break;
 					      	    case'g':
 					      	  		Vmin+=0.1;
+					      	  		if(Vmin>Vmax)
+					      	  		{
+					      	  			Vmin=Vmax;
+					      	  		}
 					      	  		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
 					      	  		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					      	  	break;
 					      	    case'h':
 					      	 		Vmin-=0.1;
+					      	 		if(Vmin<0)
+					      	 		{
+					      	 			Vmin=0;
+					      	 		}
 					      	 		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
 					      	 		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					      	 	break;
@@ -327,16 +339,28 @@ int main(void)
 					    break;
 					    case'f':
                             Vmax-=0.1;
+                            if(Vmax<Vmin)
+                            {
+                            	Vmax=Vmin;
+                            }
 					    	sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
 					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					    break;
 					    case'g':
                             Vmin+=0.1;
+			      	  		if(Vmin>Vmax)
+			      	  		{
+			      	  			Vmin=Vmax;
+			      	  		}
 					    	sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
 					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					    break;
 					    case'h':
 					    	Vmin-=0.1;
+			      	 		if(Vmin<0)
+			      	 		{
+			      	 			Vmin=0;
+			      	 		}
 					        sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
 					    	HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					    break;
@@ -405,24 +429,44 @@ int main(void)
 					       	break;
 					       	case'f':
 					       		Vmax-=0.1;
+					       		if(Vmax<Vmin)
+					       		{
+					       			Vmax=Vmin;
+					       		}
 					       		sprintf(KxDataBuffer, "Vmax=%dV \r\n", Vmax);
 					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					        break;
 					       	case'g':
 					       		Vmin+=0.1;
+				      	  		if(Vmin>Vmax)
+				      	  		{
+				      	  			Vmin=Vmax;
+				      	  		}
 					       		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
 					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					        break;
 					       	case'h':
 					       		Vmin-=0.1;
+				      	 		if(Vmin<0)
+				      	 		{
+				      	 			Vmin=0;
+				      	 		}
 					       		sprintf(KxDataBuffer, "Vmin=%dV \r\n", Vmin);
 					       		HAL_UART_Transmit(&huart2, (uint8_t*)KxDataBuffer, strlen(KxDataBuffer), 1000);
 					       	break;
 					       	case'j':
                                 duty+=0.1;
+                                if(duty>1)
+                                {
+                                duty=1;
+                                }
 					       	break;
 					       	case'k':
                                 duty-=0.1;
+                                if(duty<0)
+                                {
+                                duty=0;
+                                }
 					       	break;
 					    	default:
 					    	{
